@@ -1,0 +1,6 @@
+{
+  "name": "Abenix AI Assistant",
+  "description": "Official AI Customer Assistant & Product Inquiry Catalog for Abenix Instruments - Manufacturer & Exporter of Surgical & Medical Instruments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
