@@ -1,9 +1,8 @@
-
 package com.example.ui.screens
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import com.example.data.AbenixSettings
 
 private const val ADMIN_PIN = "5757"
 
@@ -47,7 +47,9 @@ fun AdminScreen(
             onBack = onBack
         )
     } else {
-        AdminDashboard(onBack = onBack)
+        AdminDashboard(
+            onBack = onBack
+        )
     }
 }
 
@@ -81,7 +83,9 @@ private fun AdminLoginScreen(
         OutlinedTextField(
             value = pin,
             onValueChange = {
-                if (it.length <= 6) onPinChange(it)
+                if (it.length <= 6) {
+                    onPinChange(it)
+                }
             },
             label = { Text("Admin PIN") },
             singleLine = true,
@@ -115,33 +119,34 @@ private fun AdminLoginScreen(
 private fun AdminDashboard(
     onBack: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val settings = remember {
+        AbenixSettings(context)
+    }
+
     var companyName by remember {
-        mutableStateOf("Abenix Instruments")
+        mutableStateOf(settings.companyName)
     }
 
     var email1 by remember {
-        mutableStateOf("abenixinstruments@gmail.com")
+        mutableStateOf(settings.email1)
     }
 
     var email2 by remember {
-        mutableStateOf("Info@abenixinstruments.com")
+        mutableStateOf(settings.email2)
     }
 
     var phone by remember {
-        mutableStateOf("03025526011")
+        mutableStateOf(settings.phone)
     }
 
     var instagram by remember {
-        mutableStateOf(
-            "https://www.instagram.com/invites/contact/?utm_source=ig_contact_invite&utm_medium=copy_link&utm_content=kl7m992"
-        )
+        mutableStateOf(settings.instagram)
     }
 
     var aiInstructions by remember {
-        mutableStateOf(
-            "You are Abenix AI, the professional AI assistant for Abenix Instruments. " +
-                    "Give relevant, specific answers about surgical instruments and avoid repeating the same response."
-        )
+        mutableStateOf(settings.aiInstructions)
     }
 
     var savedMessage by remember {
@@ -222,3 +227,64 @@ private fun AdminDashboard(
         Spacer(modifier = Modifier.height(16.dp))
 
         Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "AI Instructions",
+                    style = MaterialTheme.typography.titleLarge
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedTextField(
+                    value = aiInstructions,
+                    onValueChange = { aiInstructions = it },
+                    label = { Text("AI Behavior") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 6
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(
+            onClick = {
+                settings.companyName = companyName
+                settings.email1 = email1
+                settings.email2 = email2
+                settings.phone = phone
+                settings.instagram = instagram
+                settings.aiInstructions = aiInstructions
+
+                savedMessage = "✓ Changes saved successfully"
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Save Changes")
+        }
+
+        if (savedMessage.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = savedMessage,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Back")
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
