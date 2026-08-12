@@ -1,5 +1,6 @@
 package com.example.data.repository
 
+import android.content.Context
 import com.example.data.AbenixSettings
 import com.example.data.Local.AbenixProductStore
 import com.example.data.local.AbenixDao
@@ -13,7 +14,10 @@ import com.example.data.remote.GeminiPart
 import com.example.data.remote.callAbenixAssistant
 import kotlinx.coroutines.flow.Flow
 
-class AbenixRepository(private val dao: AbenixDao) {
+class AbenixRepository(
+    private val dao: AbenixDao,
+    private val context: Context
+) {
 
     val allMessages: Flow<List<ChatMessage>> =
         dao.getAllMessages()
@@ -32,7 +36,6 @@ class AbenixRepository(private val dao: AbenixDao) {
         history: List<ChatMessage>
     ): String {
 
-        // Save customer message
         dao.insertMessage(
             ChatMessage(
                 sender = "user",
@@ -40,29 +43,16 @@ class AbenixRepository(private val dao: AbenixDao) {
             )
         )
 
-        /*
-         * Convert recent conversation history for Gemini.
-         *
-         * Keeping the recent conversation allows the AI to understand
-         * follow-up questions such as:
-         *
-         * User: Tell me about Kerrison Rongeur
-         * User: What is the price?
-         *
-         * The second question can now be understood in context.
-         */
         val geminiHistory =
             history
                 .takeLast(10)
                 .map { message ->
-
                     GeminiContent(
                         role =
                             if (message.sender == "user")
                                 "user"
                             else
                                 "model",
-
                         parts = listOf(
                             GeminiPart(message.text)
                         )
@@ -70,21 +60,19 @@ class AbenixRepository(private val dao: AbenixDao) {
                 }
 
         /*
-         * Load Admin Panel settings.
+         * Load settings saved from Admin Panel.
          */
-        val context = dao.getApplicationContext()
-
         val settings = AbenixSettings(context)
 
         /*
-         * Load products created/edited from the Admin Panel.
+         * Load products saved from Admin Panel.
          */
         val productStore = AbenixProductStore(context)
 
         val products = productStore.getProducts()
 
         /*
-         * Convert products into AI-readable text.
+         * Convert products into information Gemini can understand.
          */
         val productCatalog =
             if (products.isEmpty()) {
@@ -118,7 +106,7 @@ Availability: ${
             }
 
         /*
-         * Company information available to the AI.
+         * Company information from Admin Panel.
          */
         val companyInfo = """
 Company Name: ${settings.companyName}
@@ -129,13 +117,13 @@ Instagram: ${settings.instagram}
         """.trimIndent()
 
         /*
-         * Admin-controlled AI instructions.
+         * Custom AI instructions from Admin Panel.
          */
         val adminInstructions =
             settings.aiInstructions
 
         /*
-         * Send everything to the improved Abenix AI.
+         * Send all information to Gemini.
          */
         val replyText =
             callAbenixAssistant(
@@ -146,7 +134,6 @@ Instagram: ${settings.instagram}
                 productCatalog = productCatalog
             )
 
-        // Save AI response
         dao.insertMessage(
             ChatMessage(
                 sender = "assistant",
@@ -204,11 +191,6 @@ Instagram: ${settings.instagram}
     ): Boolean =
         dao.isBookmarked(id)
 
-    /*
-     * Built-in Abenix catalog.
-     *
-     * This remains available for the existing Catalog screen.
-     */
     fun getCatalogItems(): List<InstrumentCatalogItem> {
 
         return listOf(
@@ -260,4 +242,138 @@ Instagram: ${settings.instagram}
                 shortDescription =
                     "Tungsten Carbide tipped needle holder with gold rings for extreme grip and durability.",
                 fullSpecs =
-                    "T
+                    "Tungsten Carbide serrated inserts prevent needle slipping during fine delicate suturing.",
+                recommendedMaterial =
+                    "German Tungsten Carbide Inserts",
+                features =
+                    listOf(
+                        "Gold plated ring handles",
+                        "Serrated TC jaws",
+                        "Sizes: 15cm - 20cm"
+                    ),
+                imageResName =
+                    "img_custom_instruments"
+            ),
+
+            InstrumentCatalogItem(
+                id = "DENT-01",
+                name = "Dental Extraction Forceps Set",
+                category = "Dental",
+                shortDescription =
+                    "Anatomically contoured extraction forceps for upper and lower anterior & molar teeth.",
+                fullSpecs =
+                    "Corrosion-resistant medical grade steel with knurled non-slip handle profile.",
+                recommendedMaterial =
+                    "Stainless Steel 410 / Satin Finish",
+                features =
+                    listOf(
+                        "Anatomic beak contours",
+                        "Knurled handles",
+                        "Set of 10 standard forceps"
+                    ),
+                imageResName =
+                    "img_custom_instruments"
+            ),
+
+            InstrumentCatalogItem(
+                id = "DENT-02",
+                name = "Periodontal Explorer & Scaler Set",
+                category = "Dental",
+                shortDescription =
+                    "Double-ended dental explorers and sickle scalers for precise calculus removal.",
+                fullSpecs =
+                    "Hollow lightweight handle reduces hand fatigue during long clinical procedures.",
+                recommendedMaterial =
+                    "Stainless Steel 304 Handle + Hardened Tips",
+                features =
+                    listOf(
+                        "Hollow 8mm handle",
+                        "Sharp durable tips",
+                        "Color-coded rings available"
+                    ),
+                imageResName =
+                    "img_custom_instruments"
+            ),
+
+            InstrumentCatalogItem(
+                id = "ORTHO-01",
+                name = "Liston Bone Cutting Forceps",
+                category = "Orthopedic",
+                shortDescription =
+                    "Heavy duty double-action bone cutting forceps for orthopedics and trauma surgery.",
+                fullSpecs =
+                    "Double action compound joint delivers superior leverage with minimal hand pressure.",
+                recommendedMaterial =
+                    "High-Tensile German Grade Stainless Steel",
+                features =
+                    listOf(
+                        "Double action leverage",
+                        "Straight/Angled jaw choices",
+                        "Length: 19cm - 28cm"
+                    ),
+                imageResName =
+                    "img_custom_instruments"
+            ),
+
+            InstrumentCatalogItem(
+                id = "VASC-01",
+                name = "DeBakey Vascular Clamps",
+                category = "Vascular",
+                shortDescription =
+                    "Atraumatic vascular clamps designed to occlude blood vessels without tissue trauma.",
+                fullSpecs =
+                    "Special atraumatic DeBakey ribbing along jaw inner surfaces.",
+                recommendedMaterial =
+                    "Non-Magnetic Surgical Stainless Steel",
+                features =
+                    listOf(
+                        "Atraumatic jaw teeth",
+                        "Ratchet locking mechanism",
+                        "Various angle bends"
+                    ),
+                imageResName =
+                    "img_abenix_hero_banner"
+            ),
+
+            InstrumentCatalogItem(
+                id = "SET-01",
+                name = "Major General Surgery Instrument Set",
+                category = "Surgical Sets",
+                shortDescription =
+                    "Complete 62-piece surgical set for operating rooms and hospital surgical departments.",
+                fullSpecs =
+                    "Includes scalpels, towel clamps, retractors, scissors, forceps, and needle holders in sterilization box.",
+                recommendedMaterial =
+                    "Full Surgical Grade Stainless Steel",
+                features =
+                    listOf(
+                        "62 essential instruments",
+                        "Sterilization container included",
+                        "Custom set packing options"
+                    ),
+                imageResName =
+                    "img_abenix_hero_banner"
+            ),
+
+            InstrumentCatalogItem(
+                id = "OEM-01",
+                name = "Customized OEM Surgical Instruments",
+                category = "Custom",
+                shortDescription =
+                    "Tailor-made surgical tools fabricated according to customer technical drawings or samples.",
+                fullSpecs =
+                    "Full OEM/ODM manufacturing capability in Sialkot, Pakistan. Custom laser branding and packaging.",
+                recommendedMaterial =
+                    "Custom Material Specification (AISI 304, 420, TC, Titanium)",
+                features =
+                    listOf(
+                        "Custom laser engraving",
+                        "Prototype sample approval",
+                        "Bulk export box packaging"
+                    ),
+                imageResName =
+                    "img_custom_instruments"
+            )
+        )
+    }
+}
